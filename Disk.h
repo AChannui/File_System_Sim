@@ -9,9 +9,17 @@
 
 class Disk {
 public:
-    Disk();
+    Disk() : disk(256, Block()){
+       disk[1].init_bitmap();
+    };
 
-    void add_file(std::string name_, int type, )
+    void write_block(int index, const std::string& input){
+       disk[index].write_block(input);
+    }
+
+    std::string read_block(int index){
+       return disk[index].read_block();
+    }
 
 private:
 
