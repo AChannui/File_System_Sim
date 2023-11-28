@@ -25,7 +25,7 @@ public:
     }
 
 private:
-    FileSystem file_system = FileSystem(0);
+    FileSystem file_system = FileSystem();
 };
 
 

@@ -22,31 +22,22 @@ public:
        }
     }
 
-    int get_pointer(){
-       int output = block[block.capacity() - 1];
-       return output;
-    }
-
-    void set_pointer(int next_block){
-       block[block.size() - 1] = next_block;
-    }
-
     void write_block(std::string input){
        for(int i = 0; i < input.size(); i++){
           block[i] = input[i];
        }
     }
 
-
-
     std::string read_block(){
        std::string output = "";
        for(char c : block){
-          if(c != '\0') {
-             output += c;
-          }
+          output += c;
        }
        return output;
+    }
+
+    void reset_block(){
+       block = std::vector<char>(512, '\0');
     }
 
     void test_print(){

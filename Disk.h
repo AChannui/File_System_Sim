@@ -21,6 +21,10 @@ public:
        return disk[index].read_block();
     }
 
+    void reset_block(int index){
+       disk[index].reset_block();
+    }
+
 private:
 
     std::vector<Block> disk;
