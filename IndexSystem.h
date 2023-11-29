@@ -9,7 +9,6 @@
 
 class IndexSystem : public FileSystem{
 public:
-    //fix
     std::string add_file(const std::string &name) {
        std::vector<std::string> blocks;
        std::ifstream file(name);
@@ -17,7 +16,7 @@ public:
           return "file not found";
        }
        for (int i = 0; i < max_file_blocks + 1; i++) {
-          char buffer[block_size - 1] = {0};
+          char buffer[block_size] = {0};
           file.read(buffer, block_size);
           if (file.gcount() == 0) {
              break;
@@ -40,23 +39,24 @@ public:
     void delete_file(const std::string &name) {
        std::vector<int> file_info = get_file_start(name);
        std::string bitmap = disk.read_block(1);
-       int index = file_info[0];
-       for(int i = 0; i < file_info[1]; i++){
-          std::string block = disk.read_block(index);
-          disk.reset_block(index);
-          bitmap[index] = '0';
-          index = block[block.size() - 1];
+       std::string index_block = disk.read_block(file_info[0]);
+       int index = 0;
+       while(index_block[index] != '\0'){
+          disk.reset_block(index_block[index]);
+          bitmap[index_block[index]] = '0';
+          index++;
        }
+       disk.reset_block(file_info[0]);
+       bitmap[file_info[0]] = '0';
        disk.write_block(1, bitmap);
        delete_file_name(name);
     }
 
-    //fix
     void delete_file_name(const std::string &name) {
        std::string temp = get_block(0);
        for (int i = 0; i < block_size; i += name_size + 1) {
           if (is_same_name(name, temp.substr(i, name_size))) {
-             for (int j = 0; j < name_size + 2; j++) {
+             for (int j = 0; j < name_size + 1; j++) {
                 temp[i + j] = '\0';
              }
              set_block(0, temp);
@@ -65,26 +65,27 @@ public:
        }
     }
 
-    //fix
     int save_blocks(int size, std::vector<std::string> blocks) {
        std::string bitmap = get_block(1);
        if(is_enough_space(size, bitmap)){
           int start = bitmap.find('0');
           std::string index_block = disk.read_block(start);
+          bitmap[start] = '1';
           int index = bitmap.find('0', start + 1);
           for(int i = 0; i < size; i++){
              index_block[i] = index;
              disk.write_block(index, blocks[i]);
-
+             bitmap[index] = '1';
+             index = bitmap.find('0', index + 1);
           }
           disk.write_block(1, bitmap);
+          disk.write_block(start, index_block);
           return start;
        }
 
        return -1;
     }
 
-    //test
     static bool is_enough_space(int size, const std::string& bitmap) {
        int count = 0;
        int index = 2;
@@ -98,7 +99,6 @@ public:
        return true;
     }
 
-    //test
     void add_file_name(const std::string &name, int start) {
        std::string temp = get_block(0);
        for (int i = 0; i < block_size; i += name_size + 1) {
@@ -113,22 +113,18 @@ public:
        set_block(0, temp);
     }
 
-    //fix
     std::string get_file(const std::string &name) {
        std::vector<int> file_info = get_file_start(name);
        std::string output;
-
-       int next_block = file_info[0];
-       file_info = get_file_start(name);
-       for (int i = 0; i < file_info[1]; i++) {
-          std::string temp = disk.read_block(next_block);
-          output.append(temp.substr(0, temp.size() - 1));
-          next_block = temp[temp.size() - 1];
+       std::string index_block = disk.read_block(file_info[0]);
+       int index = 0;
+       while(index_block[index] != '\0'){
+          output.append(disk.read_block(index_block[index]));
+          index++;
        }
        return output;
     }
 
-    //test
     std::vector<int> get_file_start(const std::string &name) {
        std::vector<int> output(2, 0);
        std::string table = get_block(0);

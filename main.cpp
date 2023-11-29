@@ -57,6 +57,9 @@ int main() {
    std::cout << system3.get_block(1) << std::endl;
 
    IndexSystem system4;
+   std::cout << system4.add_file("sample1") << std::endl;
+   std::cout << system4.get_file("sample1") << std::endl;
+   system4.delete_file("sample1");
 
 
 
