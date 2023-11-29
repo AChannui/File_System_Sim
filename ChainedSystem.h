@@ -10,19 +10,19 @@
 
 class ChainedSystem : public FileSystem {
 public:
-    std::string add_file(const std::string &name) {
+    std::string add_file(const std::string &save_name, const std::string& file_name) {
        std::vector<std::string> blocks;
-       std::ifstream file(name);
+       std::ifstream file(file_name);
        if (!file.is_open()) {
           return "file not found";
        }
        for (int i = 0; i < max_file_blocks + 1; i++) {
-          char buffer[block_size - 1] = {0};
-          file.read(buffer, block_size - 1);
+          char buffer[block_size] = {0};
+          file.read(buffer, block_size);
           if (file.gcount() == 0) {
              break;
           }
-          blocks.push_back(std::string(buffer, block_size - 1));
+          blocks.push_back(std::string(buffer, block_size));
        }
        if (blocks.size() > max_file_blocks) {
           return "file to large";
@@ -32,7 +32,8 @@ public:
        if (file_start < 0) {
           return "not enough disk space";
        }
-       add_file_name(name, file_start, blocks.size());
+       add_file_name(save_name, file_start, blocks.size());
+       file.close();
        return "file saved";
     }
 
@@ -52,7 +53,7 @@ public:
 
     void delete_file_name(const std::string &name) {
        std::string temp = get_block(0);
-       for (int i = 0; i < block_size; i += name_size + 2) {
+       for (int i = 0; i < block_size + 1; i += name_size + 2) {
           if (is_same_name(name, temp.substr(i, name_size))) {
              for (int j = 0; j < name_size + 2; j++) {
                 temp[i + j] = '\0';
@@ -98,7 +99,7 @@ public:
 
     void add_file_name(const std::string &name, int start, int size) {
        std::string temp = get_block(0);
-       for (int i = 0; i < block_size; i += name_size + 2) {
+       for (int i = 0; i < block_size + 1; i += name_size + 2) {
           if (temp[i] == '\0') {
              for (int j = 0; j < name.size(); j++) {
                 temp[i + j] = name[j];
@@ -121,6 +122,10 @@ public:
           std::string temp = disk.read_block(next_block);
           output.append(temp.substr(0, temp.size() - 1));
           next_block = temp[temp.size() - 1];
+       }
+       int temp = output.find('\0');
+       if(temp != std::string::npos){
+          output.resize(temp);
        }
        return output;
     }
@@ -150,7 +155,7 @@ public:
     std::vector<std::vector<std::string>> get_table() {
        std::vector<std::vector<std::string>> output;
        std::string table = get_block(0);
-       for (int i = 0; i < block_size; i += name_size + 2) {
+       for (int i = 0; i < block_size + 1; i += name_size + 2) {
           if (table[i] != '\0') {
              std::string name;
              for (int j = 0; j < name_size; j++) {
@@ -171,6 +176,9 @@ public:
        }
        return output;
     }
+
+private:
+    static const int block_size = 511;
 
 };
 

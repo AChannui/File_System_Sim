@@ -4,42 +4,20 @@
 
 #ifndef CS4348OS_PROJECT3_USERINTERFACE_H
 #define CS4348OS_PROJECT3_USERINTERFACE_H
+#include <fstream>
+#include <iostream>
 
+#include "ChainedSystem.h"
 #include "ContiguousSystem.h"
 #include "FileSystem.h"
+#include "IndexSystem.h"
 
 class UserInterface {
 public:
-    UserInterface(){
-       bool file_system_picked = false;
-       while(!file_system_picked){
-          std::cout << "1. contiguous" << std::endl;
-          std::cout << "2. chained" << std::endl;
-          std::cout << "3. index" << std::endl;
-          std::cout << "which file system would you like: ";
-          int input;
-          std::cin >> input;
-          switch(input){
-             case 1:
-                file_system = ContiguousSystem();
-                file_system_picked = true;
-                break;
-             case 2:
-                file_system;
-                file_system_picked = true;
-                break;
-
-             case 3:
-                file_system;
-                file_system_picked = true;
-                break;
-
-             default:
-                std::cout << "Not a valid switch_input. Please try again." << std::endl;
-          }
-       }
+    UserInterface(FileSystem *input_system) : file_system(input_system){
        int switch_input = 0;
        while(switch_input != 8){
+          std::cout << std::endl;
           std::cout << "1. display file" << std::endl;
           std::cout << "2. display the file table" << std::endl;
           std::cout << "3. display the bitmap" << std::endl;
@@ -48,53 +26,124 @@ public:
           std::cout << "6. copy file into simulation system" << std::endl;
           std::cout << "7. delete file" << std::endl;
           std::cout << "8. exit" << std::endl;
-          std::cout << "switch_input a number between 1 and 8: ";
+          std::cout << "Input a number between 1 and 8: ";
           std::cin >> switch_input;
+          std::cout << std::endl;
 
-          std::string file_name;
-
+          std::string output_file_name;
+          std::string input_file_name;
+          std::string output;
           int block_index;
           switch(switch_input){
              case 1:
                 std::cout << "Please input file name: ";
-                std::cin >> file_name;
-                if(!sanitize_name(file_name)){
+                std::cin >> output_file_name;
+                std::cout << std::endl;
+                if(!sanitize_name(output_file_name)){
                    std::cout << "File name not allowed" << std::endl;
                    break;
                 }
-                if(!file_system.is_file_exists(file_name)){
+                if(!file_system->is_file_exists(output_file_name)){
                    std::cout << "File not in system" << std::endl;
                    break;
                 }
-
-
+                output = file_system->get_file(output_file_name);
+                std::cout << output << std::endl;
                 break;
+
              case 2:
+                print_table();
                 break;
+
              case 3:
+                print_bitmap();
                 break;
+
              case 4:
+                std::cout << "Please input block index: ";
+                std::cin >> block_index;
+                std::cout << std::endl;
+                if(block_index > 255 || block_index < 0){
+                   std::cout << "number out of bounds" << std::endl;
+                }
+                std::cout << file_system->get_block(block_index) << std::endl;
                 break;
+
              case 5:
+                std::cout << "Please input copy from file name: ";
+                std::cin >> output_file_name;
+                std::cout << std::endl;
+                std::cout << "Please input copy to file name: ";
+                std::cin >> input_file_name;
+                std::cout << std::endl;
+                if(!sanitize_name(output_file_name)){
+                   std::cout << "File name not allowed" << std::endl;
+                   break;
+                }
+                if(!file_system->is_file_exists(output_file_name)){
+                   std::cout << "File not in system" << std::endl;
+                   break;
+                }
+                {
+                   std::ofstream output_file(input_file_name);
+                   if(!output_file.is_open()){
+                      std::cout << "Couldn't open output file" << std::endl;
+                      break;
+                   }
+                   output_file << file_system->get_file(output_file_name);
+                }
                 break;
+
              case 6:
+                std::cout << "Please input copy from file name: ";
+                std::cin >> input_file_name;
+                std::cout << std::endl;
+                std::cout << "Please input copy to file name: ";
+                std::cin >> output_file_name;
+                std::cout << std::endl;
+                if(!sanitize_name(output_file_name)){
+                   std::cout << "File name not allowed" << std::endl;
+                   break;
+                }
+                if(file_system->is_file_exists(output_file_name)){
+                   std::cout << "File already has that name" << std::endl;
+                   break;
+                }
+                std::cout << file_system->add_file( output_file_name, input_file_name);
                 break;
+
              case 7:
+                std::cout << "Please input file name: ";
+                std::cin >> output_file_name;
+                std::cout << std::endl;
+                if(!sanitize_name(output_file_name)){
+                   std::cout << "File name not allowed" << std::endl;
+                   break;
+                }
+                if(!file_system->is_file_exists(output_file_name)){
+                   std::cout << "File not in system" << std::endl;
+                   break;
+                }
+                file_system->delete_file(output_file_name);
                 break;
+
              case 8:
-                break;
+                return;
              default:
+                std::cout << "Invalid input" << std::endl;
                 break;
           }
        }
     }
 
     void print_table(){
-       std::vector<std::vector<std::string>> table = file_system.get_table();
+       std::vector<std::vector<std::string>> table = file_system->get_table();
        for(int i = 0; i < table.size(); i++){
-          std::cout << table[i][0] << ": " << table[i][1];
+          int size = table[i][1][0];
+          std::cout << table[i][0] << ": " << size;
           if(table[i].size() > 2){
-             std::cout << table[i][2];
+             int length = table[i][2][0];
+             std::cout << ", " << length;
           }
           std::cout << std::endl;
        }
@@ -102,21 +151,16 @@ public:
 
 
     void print_bitmap(){
-       std::string bitmap = file_system.get_block(1);
+       std::string bitmap = file_system->get_block(1);
        for(int i = 0; i < 512; i++){
           if(i != 0 && i % 32 == 0){
              std::cout << std::endl;
           }
           std::cout << bitmap[i];
        }
+       std::cout << std::endl;
     }
 
-    void print_file(std::string name){
-       std::string file = file_system.get_file(name);
-       if(file.find('\0') > 0){
-
-       }
-    }
 
     bool sanitize_name(const std::string& name){
        if(name.size() > 8){
@@ -132,7 +176,7 @@ public:
     }
 
 private:
-     ContiguousSystem file_system;
+     FileSystem *file_system;
 };
 
 

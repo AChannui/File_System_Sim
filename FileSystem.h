@@ -104,13 +104,19 @@ public:
        return true;
     }
 
-    static const int block_size = 512;
+    virtual std::string get_file(const std::string &name) = 0;
+    virtual bool is_file_exists(const std::string &name) = 0;
+    virtual std::string add_file(const std::string &save_name, const std::string& file_name) = 0;
+    virtual void delete_file(const std::string &name) = 0;
+    virtual std::vector<std::vector<std::string>> get_table() = 0;
+
 
 protected:
     int method;
     int name_size;
     int max_file_blocks;
     int disk_size;
+    int block_size;
     Disk disk;
 
 

@@ -14,9 +14,9 @@
 class ContiguousSystem : public FileSystem {
 public:
 
-    std::string add_file(const std::string &name) {
+    std::string add_file(const std::string &save_name, const std::string& file_name) {
        std::vector<std::string> blocks;
-       std::ifstream file(name);
+       std::ifstream file(file_name);
        if (!file.is_open()) {
           return "file not found";
        }
@@ -36,11 +36,12 @@ public:
        if (file_start < 0) {
           return "not enough disk space";
        }
-       add_file_name(name, file_start, blocks.size());
+       add_file_name(save_name, file_start, blocks.size());
        //sets blocks with file;
        for (int i = 0; i < blocks.size(); i++) {
           set_block(i + file_start, blocks[i]);
        }
+       file.close();
        return "file saved";
     }
 
@@ -112,6 +113,10 @@ public:
        for (int i = 0; i < file_info[1]; i++) {
           output.append(disk.read_block(file_info[0] + i));
        }
+       int temp = output.find('\0');
+       if(temp != std::string::npos){
+          output.resize(temp);
+       }
        return output;
     }
 
@@ -163,6 +168,7 @@ public:
     }
 
 private:
+    static const int block_size = 512;
 
 };
 

@@ -5,13 +5,15 @@
 #ifndef CS4348OS_PROJECT3_INDEXSYSTEM_H
 #define CS4348OS_PROJECT3_INDEXSYSTEM_H
 
+#include <string>
+
 #include "FileSystem.h"
 
 class IndexSystem : public FileSystem{
 public:
-    std::string add_file(const std::string &name) {
+    std::string add_file(const std::string &save_name, const std::string& file_name) {
        std::vector<std::string> blocks;
-       std::ifstream file(name);
+       std::ifstream file(file_name);
        if (!file.is_open()) {
           return "file not found";
        }
@@ -31,7 +33,8 @@ public:
        if (file_start < 0) {
           return "not enough disk space";
        }
-       add_file_name(name, file_start);
+       add_file_name(save_name, file_start);
+       file.close();
        return "file saved";
     }
 
@@ -122,6 +125,10 @@ public:
           output.append(disk.read_block(index_block[index]));
           index++;
        }
+       int temp = output.find('\0');
+       if(temp != std::string::npos){
+          output.resize(temp);
+       }
        return output;
     }
 
@@ -170,6 +177,9 @@ public:
        }
        return output;
     }
+private:
+    static const int block_size = 512;
+
 };
 
 
