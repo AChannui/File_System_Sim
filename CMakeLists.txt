@@ -7,6 +7,10 @@ add_executable(CS4348OS_Project3 main.cpp FileSystem.cpp FileSystem.h Disk.cpp D
         UserInterface.cpp
         UserInterface.h
         ContiguousSystem.cpp
-        ContiguousSystem.h)
+        ContiguousSystem.h
+        ChainedSystem.cpp
+        ChainedSystem.h
+        IndexSystem.cpp
+        IndexSystem.h)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/sample1 DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

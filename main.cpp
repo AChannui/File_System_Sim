@@ -1,6 +1,8 @@
 #include <iostream>
 
 #include "ContiguousSystem.h"
+#include "ChainedSystem.h"
+#include "IndexSystem.h"
 
 int main() {
 
@@ -38,10 +40,26 @@ int main() {
    std::cout << system2.get_file("test1") << std::endl;
    std::cout << system2.add_file("sample1") << std::endl;
    std::cout << system2.get_file("sample1") << std::endl;
+   system2.delete_file("sample1");
+   std::cout << system2.get_block(1) << std::endl;
+   std::cout << system2.get_block(0) << std::endl;
+   std::vector<std::vector<std::string>> system2Table = system2.get_table();
+   std::cout << system2.get_block(0) << std::endl;
 
-   std::vector<std::string> testV;
-   char *testC = new char[10]{'1', '2', '3'};
-   testV.push_back(testC);
+   ChainedSystem system3 = ChainedSystem();
+   system3.add_file_name("test1", 2, 1);
+   system3.set_block(2, "this is a test of the chained system");
+   std::cout << system3.get_file("test1") << std::endl;
+   system3.delete_file("test1");
+   std::cout << system3.add_file("sample1") << std::endl;
+   std::cout << system3.get_file("sample1") << std::endl;
+   system3.delete_file("sample1");
+   std::cout << system3.get_block(1) << std::endl;
+
+   IndexSystem system4;
+
+
+
 
    return 0;
 }

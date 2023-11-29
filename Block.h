@@ -29,7 +29,7 @@ public:
     }
 
     std::string read_block(){
-       std::string output = "";
+       std::string output;
        for(char c : block){
           output += c;
        }

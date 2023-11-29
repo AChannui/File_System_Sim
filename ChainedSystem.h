@@ -1,19 +1,15 @@
 //
-// Created by Alexander Chan-Nui on 11/27/23.
+// Created by Alexander Chan-Nui on 11/28/23.
 //
 
-#ifndef CS4348OS_PROJECT3_CONTIGUOUSSYSTEM_H
-#define CS4348OS_PROJECT3_CONTIGUOUSSYSTEM_H
-
-#include <ios>
-#include <sstream>
-#include <string>
+#ifndef CS4348OS_PROJECT3_CHAINEDSYSTEM_H
+#define CS4348OS_PROJECT3_CHAINEDSYSTEM_H
 
 #include "FileSystem.h"
 
-class ContiguousSystem : public FileSystem {
-public:
 
+class ChainedSystem : public FileSystem {
+public:
     std::string add_file(const std::string &name) {
        std::vector<std::string> blocks;
        std::ifstream file(name);
@@ -21,37 +17,36 @@ public:
           return "file not found";
        }
        for (int i = 0; i < max_file_blocks + 1; i++) {
-          char buffer[block_size] = {0};
-          file.read(buffer, block_size);
+          char buffer[block_size - 1] = {0};
+          file.read(buffer, block_size - 1);
           if (file.gcount() == 0) {
              break;
           }
-          blocks.push_back(std::string(buffer, block_size));
+          blocks.push_back(std::string(buffer, block_size - 1));
        }
        if (blocks.size() > max_file_blocks) {
           return "file to large";
        }
        // find start point
-       int file_start = find_space(blocks.size());
+       int file_start = save_blocks(blocks.size(), blocks);
        if (file_start < 0) {
           return "not enough disk space";
        }
        add_file_name(name, file_start, blocks.size());
-       //sets blocks with file;
-       for (int i = 0; i < blocks.size(); i++) {
-          set_block(i + file_start, blocks[i]);
-       }
        return "file saved";
     }
 
     void delete_file(const std::string &name) {
        std::vector<int> file_info = get_file_start(name);
-       std::string temp = disk.read_block(1);
-       for (int i = file_info[0]; i < file_info[1] + file_info[0]; i++) {
-          disk.reset_block(i);
-          temp[i] = '0';
+       std::string bitmap = disk.read_block(1);
+       int index = file_info[0];
+       for (int i = 0; i < file_info[1]; i++) {
+          std::string block = disk.read_block(index);
+          disk.reset_block(index);
+          bitmap[index] = '0';
+          index = block[block.size() - 1];
        }
-       disk.write_block(1, temp);
+       disk.write_block(1, bitmap);
        delete_file_name(name);
     }
 
@@ -68,24 +63,35 @@ public:
        }
     }
 
-    int find_space(int size) {
+    int save_blocks(int size, std::vector<std::string> blocks) {
        std::string bitmap = get_block(1);
-       for (int i = 2; i < disk_size - size; i++) {
-          if (is_enough_space(size, i, bitmap)) {
-             for (int j = 0; j < size; j++) {
-                bitmap[i + j] = '1';
-             }
-             return i;
+       if (is_enough_space(size, bitmap)) {
+          int start = bitmap.find('0');
+          int index = bitmap.find('0');
+          for (int i = 0; i < size; i++) {
+             bitmap[index] = '1';
+             std::string temp = blocks[i];
+             int next_index = bitmap.find('0', index + 1);
+             temp.push_back(next_index);
+             disk.write_block(index, temp);
+             index = next_index;
           }
+          disk.write_block(1, bitmap);
+          return start;
        }
+
        return -1;
     }
 
-    static bool is_enough_space(int size, int index, std::string bitmap) {
-       for (int j = 0; j < size; j++) {
-          if (bitmap[index + j] != '0') {
+    static bool is_enough_space(int size, const std::string &bitmap) {
+       int count = 0;
+       int index = 2;
+       while (count < size) {
+          index = bitmap.find('0', index) + 1;
+          if (index < 0) {
              return false;
           }
+          count++;
        }
        return true;
     }
@@ -106,11 +112,15 @@ public:
     }
 
     std::string get_file(const std::string &name) {
-       std::vector<int> file_info;
+       std::vector<int> file_info = get_file_start(name);
        std::string output;
+
+       int next_block = file_info[0];
        file_info = get_file_start(name);
        for (int i = 0; i < file_info[1]; i++) {
-          output.append(disk.read_block(file_info[0] + i));
+          std::string temp = disk.read_block(next_block);
+          output.append(temp.substr(0, temp.size() - 1));
+          next_block = temp[temp.size() - 1];
        }
        return output;
     }
@@ -153,18 +163,16 @@ public:
              std::vector<std::string> temp;
              output.push_back(temp);
              output[output.size() - 1].push_back(name);
-             std::string start_temp(1, table[i+name_size]);
+             std::string start_temp(1, table[i + name_size]);
              output[output.size() - 1].push_back(start_temp);
-             std::string length_temp(1, table[i+name_size + 1]);
+             std::string length_temp(1, table[i + name_size + 1]);
              output[output.size() - 1].push_back(length_temp);
           }
        }
        return output;
     }
 
-private:
-
 };
 
 
-#endif //CS4348OS_PROJECT3_CONTIGUOUSSYSTEM_H
+#endif //CS4348OS_PROJECT3_CHAINEDSYSTEM_H
