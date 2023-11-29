@@ -130,6 +130,8 @@ public:
              case 8:
                 return;
              default:
+                std::cin.clear();
+                std::cin.ignore(10000, '\n');
                 std::cout << "Invalid input" << std::endl;
                 break;
           }

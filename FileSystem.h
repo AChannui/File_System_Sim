@@ -95,13 +95,11 @@ public:
     */
 
     bool is_same_name(std::string file_name, std::string table_name) const{
-       for(int i = 0; i < name_size; i++){
-          if ((i > file_name.size() - 1 && table_name[i] != '\0') ||
-              (file_name[i] != table_name[i])) {
-             return false;
-          }
+       int null_in_table_name = table_name.find('\0');
+       if(null_in_table_name != std::string::npos){
+          table_name.resize( null_in_table_name);
        }
-       return true;
+       return file_name == table_name;
     }
 
     virtual std::string get_file(const std::string &name) = 0;
