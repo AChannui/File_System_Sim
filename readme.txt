@@ -7,7 +7,7 @@ acc200010
 
 build instructions
     tar -xvf CS4348OS_Project3.tar.gz
-    cd CS4348_Project3
+    cd CS4348OS_Project3
     make build
 
 run instructions (from build directory)
